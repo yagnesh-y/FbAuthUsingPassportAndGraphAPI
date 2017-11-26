@@ -78,5 +78,5 @@ app.get('/profile', require('connect-ensure-login').ensureLoggedIn(), function(r
 });
 
 app.listen(PORT, () =>{
-           console.log(`Listening on PORT  ${PORT}`)
+    console.log(`Listening on PORT  ${PORT}`)
 });
