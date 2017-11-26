@@ -1,0 +1,144 @@
+<!-- *Profile page when the user navigates to '/profile' route...
+Here we are calling the FB graph API for fetching the likes
+information of the particular logged in user. Once the response
+is generated from the API, user can now enter a page name and
+check whether he has earlier liked it or now. User is made aware by
+use of a alert command.
+
+User logged in and successfully auuthorised by passport will send the
+required user info and appid id also sent to hit the API.
+--!>
+
+<style>
+    body{
+        background-color: #27ae60;
+        
+    }
+    input[type="text"]{
+        width:300px;
+        font: 1.2em;
+        padding: 5px 5px;
+        margin-bottom: 5px;
+    }
+    button{
+        padding: 5px 10px;
+        border: 2px solid black;
+        border-radius: 3px;
+        margin-bottom: 5px;
+    }
+</style>
+
+<p>Name:<h1><%= user.displayName %></h1></p>
+<br/>
+
+<% if (user.emails) { %>
+    <p>Email:<%= user.emails[0].value %></p>
+    <br/>
+<% } %>
+
+<div id="enter_page_name" style="display: none;">
+    <p>  Please enter a facebook page to find out whether is liked by you or not! <strong>Note:</strong> Letters can be case-insensitive</p>
+    <input type="text" placeholder="enter facebook page name" id="page_name" />
+    <br/>
+    <button onclick="checkPageStatus()">Check Page Like Status!</button>
+</div>
+
+<div id="hide_div">
+    <p> Fetching User liked data from the API..... </p>
+</div>
+
+<div id="show_pages"></div>
+
+<script>
+    //get the appid from the server
+    var appId = <%= app_id  %>;
+    
+    // load Facebook SDK
+    window.fbAsyncInit = function () {
+        FB.init({
+            appId: appId,
+            xfbml: true,
+            version: 'v2.11'
+        });
+        
+        //checking whether the user is logged in or connection timed out..
+        FB.getLoginStatus(function (response) {
+            statusChangeCallback(response);
+        });
+
+        //check for the status of the api request and then show the UI accordingly..
+        apiStatus();
+
+    };
+
+    (function (d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) { return; }
+        js = d.createElement(s); js.id = id;
+        js.src = "https://connect.facebook.net/en_US/sdk.js";
+        fjs.parentNode.insertBefore(js, fjs);
+    } (document, 'script', 'facebook-jssdk'));
+    
+    //function to check if the user is logged in or logged out of the session..
+    function statusChangeCallback(response) {
+        if (response.status === 'connected') {
+            console.log('Logged in and authenticated');
+            callAPI();
+        } else {
+            console.log('Not authenticated');
+            console.log('Redirecting...');
+            //redirecting the user to login page if the user is not connected to the session..
+            window.location.href = `http://localhost:${PORT}/login`;
+
+        }
+    }
+    
+    var response_api = [];
+    var query_api_status = false;
+    
+    //funtion to make API call for the getting all the likes made by that 'user'
+    function callAPI() {
+        FB.api('/me/likes?fields=name', function (response) {
+            if (response && !response.error) {
+                query_api_status = true;
+                apiStatus();
+                response_api = response.data;
+                console.log(response.data)
+                //write to the screen pages liked by the user..
+                var targetDiv= document.getElementById('show_pages');
+                targetDiv.innerHTML+="Please find below all the pages liked by you. \n\n <ul>"
+                response_api.map((i,k)=> {
+                    targetDiv.innerHTML+='<li>'+ i.name+'</li>';
+                })
+                targetDiv+="</ul>"
+            }
+            if(response.error){
+                targetDiv.innerHTML = 'Some error occured while fetching from API' + response.err;
+            }
+        })
+    }
+    
+    //function to hide to show div's based on reponse/quering API status 
+    function apiStatus() {
+        if (query_api_status) {
+            document.getElementById('hide_div').style.display = 'none';
+            document.getElementById('enter_page_name').style.display = 'block';
+        }
+    }
+    
+    //function to check if the user mentioned 'page name' is there in the list of likes(response from the API) made by that user..
+    function checkPageStatus() {
+        var page_name = document.getElementById('page_name').value;
+        if(page_name){
+            document.getElementById('page_name').value = '';
+            var page_status = false;
+            response_api.map((i, k) => {
+                if (i.name.toLocaleLowerCase() === page_name.toLocaleLowerCase()) {
+                    page_status = true;
+                    return;
+                }
+            })
+            return (page_status) ? alert('page liked by you...') : alert('page not liked you..');
+        }
+    }
+</script>

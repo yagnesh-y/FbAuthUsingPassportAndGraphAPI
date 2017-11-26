@@ -1,0 +1,17 @@
+<!-- Home page when the user navigates to '/' route...--!>
+
+<style>
+	body{
+		background-color: #f1c40f;
+	}
+</style>
+
+<% if (!user) { %>
+    <h1>Welcome! </h1>
+	<p>Please <a href="/login">log in</a>.</p>
+<% } else { %>
+    <h1>Welcome
+    <%= user.displayName %>!</h1>
+	<br/>
+	<p>View your <a href="/profile">profile</a></p>
+<% } %>
